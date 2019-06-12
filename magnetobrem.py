@@ -163,7 +163,7 @@ class mbs:
 #  #      #    # #      #      # # #    # #   #     #
 #  #      #    # # #    # #    # #  #  #  #   #     #
 #  ###### #    # #  ####   ####  #   ##   #   #     #
-def j_mb(nu, g, N, B):
+def j_mb(nu, g, N, B, Rsync=False):
     '''Description:
     This function reproduces the MBS emissivity from a power-law distribution.
     '''
@@ -171,7 +171,10 @@ def j_mb(nu, g, N, B):
 
     def f(g, c=1.0, q=2.5):
         Xc = 2.0 * c / (3.0 * g**2)
-        return g**(1.0 - q) * MBS.RMAfit(Xc, g)
+        if Rsync==True:
+            return g**(1.0 - q) * MBS.Rsync(Xc)
+        else:
+            return g**(1.0 - q) * MBS.RMAfit(Xc, g)
 
     nuB = C.nuConst * B
     chi = nu / nuB
