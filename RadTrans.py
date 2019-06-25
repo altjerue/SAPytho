@@ -38,7 +38,7 @@ def Inu_Guold79_v(jnu, anu, R):
     return fnu
 
 
-def opt_depth(absor, R):
+def opt_depth_blob(absor, R):
     tau = 2. * R * absor
     if (tau <= 1e-50):
         u = 1.
@@ -56,19 +56,25 @@ def opt_depth(absor, R):
 def intensity_blob(jnu, anu, R):
     Inu = np.zeros_like(jnu)
     for i in range(jnu.size):
-        Inu[i] = 2. * R * jnu[i] * opt_depth(anu[i], R)
+        Inu[i] = 2. * R * jnu[i] * opt_depth_blob(anu[i], R)
     return Inu
+
+
+def opt_depth_slab(absor, r):
+    tau = r * absor
+    if (tau <= 1e-10):
+        u = 1.
+    else:
+        u = (1. - np.exp(-tau)) / tau
+    return u
 
 
 def intensity_slab(jnu, anu, s):
     tau = anu * s
     Inu = np.zeros_like(jnu)
     for j in range(jnu.size):
-        if (jnu[j] > 1e-100):
-            if (tau[j] > 1e-50):
-                Inu[j] = s * jnu[j] * (1. - np.exp(-tau[j])) / tau[j]
-            else:
-                Inu[j] = s * jnu[j]
+        if (tau[j] > 1e-10):
+            Inu[j] = s * jnu[j] * (1. - np.exp(-tau[j])) / tau[j]
         else:
-            Inu[j] = 0.
+            Inu[j] = s * jnu[j]
     return Inu
