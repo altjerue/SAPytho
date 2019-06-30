@@ -14,7 +14,7 @@ class iCompton:
 # total cross section valid in all regimes or 'klein nishina formula'
     def cross_section(self, nu):
 
-        # eq from Rybicki
+        # eq from Ryb-lightman 7.5
         sig_k = np.zeros_like(nu)
         for i in range(len(nu)):
             x = (C.hPlanck * nu[i]) / (self.mq * (C.cLight**2))
