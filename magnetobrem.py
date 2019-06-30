@@ -1,10 +1,10 @@
 import scipy.special as scisp
 import numpy as np
 import scipy.integrate as integrate
-from SAPyto import misc
-import SAPyto.SRtoolkit as SR
-import SAPyto.pwlFuncs as pwlf
-import SAPyto.constants as C
+from SAPytho import misc
+import SAPytho.SRtoolkit as SR
+import SAPytho.pwlFuncs as pwlf
+import SAPytho.constants as C
 
 
 class mbs:
@@ -171,7 +171,7 @@ def j_mb(nu, g, N, B, Rsync=False):
 
     def f(g, c=1.0, q=2.5):
         Xc = 2.0 * c / (3.0 * g**2)
-        if Rsync==True:
+        if Rsync == True:
             return g**(1.0 - q) * MBS.Rsync(Xc)
         else:
             return g**(1.0 - q) * MBS.RMAfit(Xc, g)
