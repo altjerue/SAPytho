@@ -147,12 +147,12 @@ class mbs:
                                  lambda x: B(x),
                                  lambda x: self.Rsync(x, asym_high=True)])
         return np.piecewise(Xc,
-                            [Xc * g**3 < 0.53, Xc * g**3 >= 0.53],
+                            [Xc * g**3 < 0.5, Xc * g**3 >= 0.5],
                             [0.0, lambda x: theFit(x)])
 
     def RMA(self, Xc, g):
         return np.piecewise(Xc,
-                            [Xc * g**3 <= 0.53, Xc * g**3 > 0.53],
+                            [Xc * g**3 <= 0.5, Xc * g**3 > 0.5],
                             [0.0, lambda x: x * self.SL07(x)])
 
 
@@ -163,15 +163,19 @@ class mbs:
 #  #      #    # #      #      # # #    # #   #     #
 #  #      #    # # #    # #    # #  #  #  #   #     #
 #  ###### #    # #  ####   ####  #   ##   #   #     #
-def j_mb(nu, g, N, B):
+def j_mb(nu, g, N, B, Rsync=False):
     '''Description:
     This function reproduces the MBS emissivity from a power-law distribution.
     '''
     MBS = mbs()
 
-    def f(g, c=1.0, q=2.5):
+    def f(lg, c, q):
+        g = np.exp(lg)
         Xc = 2.0 * c / (3.0 * g**2)
-        return g**(1.0 - q) * MBS.RMAfit(Xc, g)
+        if Rsync is True:
+            return g**(1.0 - q) * MBS.Rsync(Xc)
+        else:
+            return g**(1.0 - q) * MBS.RMAfit(Xc, g)
 
     nuB = C.nuConst * B
     chi = nu / nuB
@@ -186,13 +190,13 @@ def j_mb(nu, g, N, B):
                 if (q < -8.):
                     q = -8.
 
-                I2 = integrate.romberg(f, g[k], g[k + 1], args=(chi[j], q))
-                jnu[j] = jnu[j] + C.jmbConst * nuB * N[k] * I2 * g[k]**q
+                I2 = integrate.romberg(f, np.log(g[k]), np.log(g[k + 1]), args=(chi[j], q), divmax=15)
+                jnu[j] = jnu[j] + N[k] * I2 * g[k]**q
 
             if (jnu[j] < 1e-200):
                 jnu[j] = 0.
 
-    return jnu
+    return C.jmbConst * nuB * jnu
 
 
 #
@@ -202,15 +206,19 @@ def j_mb(nu, g, N, B):
 #  ###### #    #      # #    # #####  #####    #   # #    # #  # #
 #  #    # #    # #    # #    # #   #  #        #   # #    # #   ##
 #  #    # #####   ####   ####  #    # #        #   #  ####  #    #
-def a_mb(nu, g, N, B):
+def a_mb(nu, g, N, B, Rsync=False):
     '''Description:
     This function reproduces the MBS absorption from a power-law distribution.
     '''
     MBS = mbs()
 
-    def f(g, c=1.0, q=2.5):
-        Xc = 2.0 * c / (3.0 * g**2)
-        return g**(1.0 - q) * MBS.RMAfit(Xc, g)
+    def f(lg, c, q):
+        g = np.exp(lg)
+        Xc = 2 * c / (3 * g**2)
+        if Rsync is True:
+            return g**(-q) * MBS.Rsync(Xc) * (q + 1 + g**2 / (g**2 - 1))
+        else:
+            return g**(-q) * MBS.RMAfit(Xc, g) * (q + 1 + g**2 / (g**2 - 1))
 
     nuB = C.nuConst * B
     chi = nu / nuB
@@ -225,9 +233,9 @@ def a_mb(nu, g, N, B):
                 if (q < -8.):
                     q = -8.
 
-                A2 = integrate.romberg(f, g[k], g[k + 1], args=(chi[j], q))
-                anu[j] = anu[j] + C.ambConst * nuB * N[k] * A2 * g[k]**q
+                A2 = integrate.romberg(f, np.log(g[k]), np.log(g[k + 1]), args=(chi[j], q), divmax=15)
+                anu[j] = anu[j] + N[k] * A2 * g[k]**q
             if (anu[j] < 1e-200):
                 anu[j] = 0.
 
-    return anu / nu**2
+    return C.ambConst * nuB * anu / nu**2
