@@ -22,6 +22,22 @@ class iCompton:
         sig_k -= (1 + 3 * x) / (1 + (2 * x))**2
         return C.sigmaT * 3 * sig_k / 4
 
+# Distibution function: see Dermer 6.75
+    def Fc(g=None, E_s=None, E=None, q=None, Gam=None):
+        # have to specify args
+        # g is lorents factor, E_s is scattered photon energy and E is incoming photon energy.
+        if q is None:
+            Gam = 4 * g * E
+            q = E_s / (g * Gam * (1 - (E_s / g)))
+            fc = 2 * q * np.log(q) + (1 + (2 * q))(1 - q) + \
+                (((Gam * q)**2)(1 - q)) / (2 * (1 + (Gam * q)))
+            return fc
+        else:
+
+            fc = 2 * q * np.log(q) + (1 + (2 * q)) * (1 - q) + \
+                (((Gam * q)**2) * (1 - q)) / (2 * (1 + (Gam * q)))
+            return fc
+
     def PowerLaw(E, Q0, Emin, Emax, q):
         if type(E) == float:
             if E <= Emin or E >= Emax:
@@ -33,8 +49,8 @@ class iCompton:
             pwl = np.piecewise(E,
                                [E < Emin, (E >= Emin) & (E <= Emax), E > Emax],
                                [lambda x: 1e-200,
-                                   lambda x: Q0 * np.power(x, -q),
-                                   lambda x: 1e-200])
+                                lambda x: Q0 * np.power(x, -q),
+                                lambda x: 1e-200])
             return pwl
 
     #
