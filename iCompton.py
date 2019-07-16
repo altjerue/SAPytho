@@ -23,14 +23,14 @@ class iCompton:
         return C.sigmaT * 3 * sig_k / 4
 
 # Distibution function: see Dermer 6.75
-    def Fc(g=None, E_s=None, E=None, q=None, Gam=None):
+    def Fc(self, E_s=None, g=None, E=None, q=None, Gam=None):
         # have to specify args
         # g is lorents factor, E_s is scattered photon energy and E is incoming photon energy.
         if q is None:
             Gam = 4 * g * E
             q = E_s / (g * Gam * (1 - (E_s / g)))
-            fc = 2 * q * np.log(q) + (1 + (2 * q))(1 - q) + \
-                (((Gam * q)**2)(1 - q)) / (2 * (1 + (Gam * q)))
+            fc = 2 * q * np.log(q) + (1 + (2 * q)) * (1 - q) + \
+                (((Gam * q)**2) * (1 - q)) / (2 * (1 + (Gam * q)))
             return fc
         else:
 
@@ -38,7 +38,7 @@ class iCompton:
                 (((Gam * q)**2) * (1 - q)) / (2 * (1 + (Gam * q)))
             return fc
 
-    def PowerLaw(E, Q0, Emin, Emax, q):
+    def PowerLaw(self, E, Q0, Emin, Emax, q):
         if type(E) == float:
             if E <= Emin or E >= Emax:
                 return 1e-200
@@ -61,49 +61,73 @@ class iCompton:
     #  #      #    # # #    # #    # #  #  #  #   #     #
     #  ###### #    # #  ####   ####  #   ##   #   #     #
 
-    def j_ic(nu, Q0, E, qe, qph, e_powerlaw=True, Emin=0., Emax=10**30):
+    # mono energetic isotropic compton emissivity. see Dermer 6.77
+    def j_ic(E_s, E, g):
+        IC = iCompton()
+        jic = np.zeros_like(E_s)
 
-        if(e_powerlaw):
-            f = np.power
-        else:
-            f = C.cLight
+        for i in range(len(E_s) - 1):
+            x = E_s[i] / 511000
+            y = E
+            if((4 * y) / (1 + (4 * y)) < x or y < x):
+                Min = (x / 2) + (1 / 2) * np.sqrt(((x**2) * y + x) / y)
+                # make general later for a function parameter.
+                Max = 1e7
 
-        def cross_section(nu):
+            elif(y / (1 + y) < x and x < y or y / (1 + y) < x and x <= 4 * y / (1 + (4 * y))):
+                Max = (-x * y) / (x - y)
+                #Min = 1
+                # still need to make general for cut offs
+                Min = 1e2
+            elif(x > (3 / 4)):
+                Min = (x / 2) + (1 / (2 * np.sqrt(3))) * np.sqrt(((3 / 4) * (x**2) + x))
+                #Min = 1
+                # still need to make general for cut offs
+                Max = 1e7
+            elif((4 * y) / (1 + (4 * y)) < x and x < y):
+                Min = (x / 2) + (1 / 2) * np.sqrt(((x**2) * y + x) / y)
+                Max = (-x * y) / (x - y)
+            elif(x > (3 / 7) and x < (3 / 4)):
+                Max = (-3 * x) / (-3 + (4 * x))
+                #Min = 1
+                # still need to make general for cut offs
+                Min = 1e2
+            else:
+                Max = 1e7
+                #Min = 1
+                # still need to make general for cut offs
+                Min = 1e2
 
-            # eq. (7.5) from Rybicki & Lightman (1979)
-            x = (C.hPlanck * nu) / (C.me * C.cLight**2)
-            sig_k = (1 + x) * ((2 * x * (1 + x) / (1 + (2 * x))) - np.log(1 + (2 * x))) / x**3
-            sig_k += np.log(1 + 2 * x) / (2 * x)
-            sig_k -= (1 + 3 * x) / (1 + (2 * x))**2
-            return C.sigmaT * 3 * sig_k / 4
+            z = np.linspace(Min, Max, len(g))
 
-        def PowerLaw(E, Q0, Emin, Emax, q):
+            if(z[i] < Min):
+                diff = Min - z[i]
+                z[i] += diff
+            elif(z[i] > Max):
+                diff = Max - z[i]
+                z[i] -= diff
 
-            return Q0 * np.power(E, -q)
+            def f(l):
+                k = IC.Fc(x, l, y) * np.power(l, -2.2)
+                return k
 
-        def f1(E1):
-            f = (E1**2) * (PowerLaw(E1, Q0, Emin, Emax, qe)) * cross_section(sp.eV2Hz(E1))
-            return f
+            d = integrate.romberg(f, z[i], z[i + 1], divmax=10)
+            jic[i] = (3 / 4) * C.sigmaT * ((x / y)**2) * d
+        # for i in range(len(g) - 1):
+        # Max = E_s[i] / (1 - (E_s[i] / g[i]))
+        # Min = E_s[i] / ((4 * ((g[i])**2)) * (1 - (E_s[i] / g[i])))
+        # y = np.linspace(Min, Max, len(g))
+        # for j in range(len(g) - 1):
+        # def z(e):
+        # d = IC.Fc(E_s[i], g[i], e) / (e**2)
+        # return d
+        # x = integrate.romberg(z, y[j], y[j + 1])
 
-        def f2(nuu, E1, E2):
-            f = integrate.romberg(f1, E1, E2)
-            # f = (sp.Hz2eV(nuu)**2) * cross_section(sp.eV2Hz(nuu))
-            # f = (sp.Hz2eV(nuu)**2) * (PowerLaw(nuu, Q0, Emin, Emax, qph)) * cross_section(nuu)
-            return f
-        jnu = np.zeros_like(nu)
+#
+        # def z(e):
+        # d = IC.PowerLaw(e, 1, 1e12, 1e-12, 2.2) / (e**2)
+        # return d
+        # b = x * integrate.romberg(z, g[i], g[i + 1])
+        #    jic[i] = (3 / 4) * C.sigmaT * ((E_s[i])**2) *b
 
-        for k in range(len(nu) - 1):
-
-            for i in range(len(nu) - 1):
-
-                # I1 = integrate.romberg(f1, E[i], E[i + 1])
-                I4 = integrate.romberg(f2, sp.Hz2eV(
-                    nu[k]), sp.Hz2eV(nu[k + 1]), args=(E[i], E[i+1]))
-                jnu[k] = I4 * C.cLight * C.hPlanck * nu[k]
-            # I2 = integrate.quad(lambda x: I1, 0, np.pi)
-            # I3 = integrate.quad(lambda x: I2[0], 0, 2 * np.pi)
-            # I4 = integrate.romberg(f2, sp.Hz2eV(nu[k]), sp.Hz2eV(nu[k + 1]))
-            # I5 = integrate.quad(lambda x: I4, 0, np.pi)
-            # I6 = integrate.quad(lambda x: I5[0], 0, 2 * np.pi)
-            # jnu[k] = I1 * C.cLight * C.hPlanck * nu[k]
-        return jnu
+        return jic
