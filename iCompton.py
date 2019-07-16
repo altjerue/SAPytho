@@ -99,8 +99,8 @@ class iCompton:
                 k = (IC.Fc(x, l, y) * IC.PowerLaw(l, 1, Min, Max, 2.2)) / (l**2)
                 return k
 
-            d = integrate.quad(f, Min, Max)
-            jic[i] = (3 / 4) * C.sigmaT * ((x / y)**2) * d[0]
+            d = integrate.romberg(f, Min, Max, rtol=1.48e-35, tol=1.48e-35, divmax=17)
+            jic[i] = (3 / 4) * C.sigmaT * ((x / y)**2) * d
         # for i in range(len(g) - 1):
         # Max = E_s[i] / (1 - (E_s[i] / g[i]))
         # Min = E_s[i] / ((4 * ((g[i])**2)) * (1 - (E_s[i] / g[i])))
