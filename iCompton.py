@@ -108,7 +108,7 @@ class iCompton:
                 z[i] -= diff
 
             def f(l):
-                k = IC.Fc(x, l, y) * np.power(l, -2.2)
+                k = (IC.Fc(x, l, y) * np.power(l, -2.2)) / (l**2)
                 return k
 
             d = integrate.romberg(f, z[i], z[i + 1], divmax=10)
