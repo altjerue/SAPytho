@@ -93,23 +93,14 @@ class iCompton:
                 # still need to make general for cut offs
                 Min = 1e2
             else:
-                Max = 1e7
-                #Min = 1
-                # still need to make general for cut offs
-                Min = 1e2
-
-            z = np.linspace(Min, Max, len(g))
-
-            if(z[i] < Min):
                 continue
-            else:
 
-                def f(l):
-                    k = (IC.Fc(x, l, y) * np.power(l, -2.2)) / (l**2)
-                    return k
+            def f(l):
+                k = (IC.Fc(x, l, y) * IC.PowerLaw(l, 1, Min, Max, 2.2)) / (l**2)
+                return k
 
-                d = integrate.romberg(f, z[i], z[i + 1], divmax=10)
-            jic[i] = (3 / 4) * C.sigmaT * ((x / y)**2) * d
+            d = integrate.quad(f, Min, Max)
+            jic[i] = (3 / 4) * C.sigmaT * ((x / y)**2) * d[0]
         # for i in range(len(g) - 1):
         # Max = E_s[i] / (1 - (E_s[i] / g[i]))
         # Min = E_s[i] / ((4 * ((g[i])**2)) * (1 - (E_s[i] / g[i])))
