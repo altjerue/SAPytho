@@ -101,17 +101,14 @@ class iCompton:
             z = np.linspace(Min, Max, len(g))
 
             if(z[i] < Min):
-                diff = Min - z[i]
-                z[i] += diff
-            elif(z[i] > Max):
-                diff = Max - z[i]
-                z[i] -= diff
+                continue
+            else:
 
-            def f(l):
-                k = (IC.Fc(x, l, y) * np.power(l, -2.2)) / (l**2)
-                return k
+                def f(l):
+                    k = (IC.Fc(x, l, y) * np.power(l, -2.2)) / (l**2)
+                    return k
 
-            d = integrate.romberg(f, z[i], z[i + 1], divmax=10)
+                d = integrate.romberg(f, z[i], z[i + 1], divmax=10)
             jic[i] = (3 / 4) * C.sigmaT * ((x / y)**2) * d
         # for i in range(len(g) - 1):
         # Max = E_s[i] / (1 - (E_s[i] / g[i]))
