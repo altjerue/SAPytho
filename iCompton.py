@@ -62,8 +62,8 @@ class iCompton:
     #  #      #    # # #    # #    # #  #  #  #   #     #
     #  ###### #    # #  ####   ####  #   ##   #   #     #
 
-    # mono energetic isotropic compton emissivity. see Dermer 6.77
-    def j_ic(E_s, E, g):
+    # mono energetic isotropic compton emissivity. see Dermer 6.74
+    def j_ic(E_s, E, g, p=2.2, Qe=1, Qp=1, gmin=1e2, gmax=1e7, rtol=1.48e-25, tol=1.48e-25, divmax=22):
         IC = iCompton()
 
         def Fc(e_s=None, g=None, e=None, q=None, Gam=None):
@@ -83,60 +83,47 @@ class iCompton:
 
         def longcode(h):
 
-            x = E_s[h] / 511000
+            x = E_s[h] / 510998.927602161
             y = E
             if((4 * y) / (1 + (4 * y)) < x or y < x):
                 Min = (x / 2) + (1 / 2) * np.sqrt(((x**2) * y + x) / y)
-                # make general later for a function parameter.
-                Max = 1e7
+
+                Max = gmax
 
             elif(y / (1 + y) < x and x < y or y / (1 + y) < x and x <= 4 * y / (1 + (4 * y))):
                 Max = (-x * y) / (x - y)
-                #Min = 1
-                # still need to make general for cut offs
-                Min = 1e2
+
+                Min = gmin
             elif(x > (3 / 4)):
                 Min = (x / 2) + (1 / (2 * np.sqrt(3))) * np.sqrt(((3 / 4) * (x**2) + x))
-                #Min = 1
-                # still need to make general for cut offs
-                Max = 1e7
+                if(Min < gmin):
+                    Min = gmin
+                Max = gmax
             elif((4 * y) / (1 + (4 * y)) < x and x < y):
                 Min = (x / 2) + (1 / 2) * np.sqrt(((x**2) * y + x) / y)
+                if(Min < gmin):
+                    Min = gmin
                 Max = (-x * y) / (x - y)
+                if(Max > gmax):
+                    Max = gmax
             elif(x > (3 / 7) and x < (3 / 4)):
                 Max = (-3 * x) / (-3 + (4 * x))
-                #Min = 1
-                # still need to make general for cut offs
-                Min = 1e2
+                if(Max > gmax):
+                    Max = gmax
+                Min = gmin
             else:
-                Max = 1e7
-                Min = 1e2
+                Max = gmax
+                Min = gmin
 
             def f(l):
-                k = (Fc(x, l, y) * np.power(l, -2.2)) / (l**2)
+                # seems to run better if i call fc and power from inside this function
+                k = (Fc(x, l, y) * np.power(l, -p)) / (l**2)
                 return k
 
-            d = integrate.romberg(f, Min, Max, rtol=1.48e-29, tol=1.48e-29, divmax=17)
+            d = integrate.romberg(f, Min, Max, rtol=rtol, tol=tol, divmax=divmax)
             jic = (3 / 4) * C.sigmaT * ((x / y)**2) * d
             print(jic)
             return jic
         results = Parallel(n_jobs=-2)(delayed(longcode)(h) for h in range(len(E_s)))
-
-        # for i in range(len(g) - 1):
-        # Max = E_s[i] / (1 - (E_s[i] / g[i]))
-        # Min = E_s[i] / ((4 * ((g[i])**2)) * (1 - (E_s[i] / g[i])))
-        # y = np.linspace(Min, Max, len(g))
-        # for j in range(len(g) - 1):
-        # def z(e):
-        # d = IC.Fc(E_s[i], g[i], e) / (e**2)
-        # return d
-        # x = integrate.romberg(z, y[j], y[j + 1])
-
-#
-        # def z(e):
-        # d = IC.PowerLaw(e, 1, 1e12, 1e-12, 2.2) / (e**2)
-        # return d
-        # b = x * integrate.romberg(z, g[i], g[i + 1])
-        #    jic[i] = (3 / 4) * C.sigmaT * ((E_s[i])**2) *b
 
         return results
