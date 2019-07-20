@@ -121,7 +121,7 @@ class iCompton:
                 return k
 
             d = integrate.romberg(f, Min, Max, rtol=rtol, tol=tol, divmax=divmax)
-            jic = (3 / 4) * C.sigmaT * ((x / y)**2) * d
+            jic = (3 / 4) * C.sigmaT * C.cLight * ((x / y)**2) * d
             print(jic)
             return jic
         results = Parallel(n_jobs=-2)(delayed(longcode)(h) for h in range(len(E_s)))
