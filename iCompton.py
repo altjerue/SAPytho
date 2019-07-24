@@ -117,10 +117,12 @@ class iCompton:
 
             def f(l):
                 # seems to run better if i call fc and power from inside this function
-                k = (Fc(x, l, y) * np.power(l, -p)) / (l**2)
+                l = np.exp(l)
+                k = (l*Fc(x, l, y) * IC.PowerLaw(l, 1, gmin, gmax, p)) / (l**2)
                 return k
 
-            d = integrate.romberg(f, Min, Max, rtol=rtol, tol=tol, divmax=divmax)
+            d = integrate.romberg(f, np.log(Min), np.log(Max), rtol=rtol,
+                                  tol=tol, divmax=divmax)
             jic = (3 / 4) * C.sigmaT * (((p-2)*1)/(C.me*(C.cLight**2) *
                                                    ((1e2**(2-p))-(1e7**(2-p))))) * C.cLight * ((x / y)**2) * d
             print(jic)
