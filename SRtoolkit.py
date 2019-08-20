@@ -1,5 +1,5 @@
 import numpy as np
-import SAPytho.constants as C
+import SAPyto.constants as C
 
 
 def speed(gamma):
