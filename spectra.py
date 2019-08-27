@@ -1,10 +1,10 @@
 import numpy as np
 import numpy.ma as ma
 import scipy.integrate as sci_integ
-import SAPyto.misc as misc
-import SAPyto.pwlFuncs as pwlf
-import SAPyto.SRtoolkit as srtool
-import SAPyto.constants as C
+import SAPytho.misc as misc
+import SAPytho.pwlFuncs as pwlf
+import SAPytho.SRtoolkit as srtool
+import SAPytho.constants as C
 
 
 def conv2Jy(flux):
@@ -122,7 +122,9 @@ def Itobs(t, nu, jnut, sen_lum, R, muc, Gbulk, muo, z, D):
                             sind = -8.0
                         if (sind > 8.0):
                             sind = 8.0
-                        Itobs[i, j] = Itobs[i, j] + jnut[ii - 1, j] * tob_min * pwl.P(tob_max / tob_min, sind, 1e-6) / (Gbulk * muc * (muo - srtool.speed(Gbulk)) * D)
+                        Itobs[i, j] = Itobs[i, j] + jnut[ii - 1, j] * tob_min * \
+                            pwl.P(tob_max / tob_min, sind, 1e-6) / \
+                            (Gbulk * muc * (muo - srtool.speed(Gbulk)) * D)
     return Itobs
 
 
@@ -158,7 +160,8 @@ class LightCurves:
                 nu_pos -= 1
             for i in range(t.size):
                 if (flux[i, nu_pos] > 1e-100) & (flux[i, nu_pos + 1] > 1e-100):
-                    s = -np.log(flux[i, nu_pos + 1] / flux[i, nu_pos]) / np.log(nus[nu_pos + 1] / nus[nu_pos])
+                    s = -np.log(flux[i, nu_pos + 1] / flux[i, nu_pos]) / \
+                        np.log(nus[nu_pos + 1] / nus[nu_pos])
                     if s > 8.0:
                         s = 8.0
                     if s < -8.0:
@@ -181,7 +184,8 @@ class LightCurves:
 
         if nu_max == nu_min:
             for i in range(t.size):
-                licur[i] = np.exp(np.interp(np.log(nu_max), np.log(freqs), np.log(flux[i, :], where=(flux[i, :] != 0.0))))
+                licur[i] = np.exp(np.interp(np.log(nu_max), np.log(freqs),
+                                            np.log(flux[i, :], where=(flux[i, :] != 0.0))))
         else:
             nu_mskd = ma.masked_outside(freqs, nu_min, nu_max)
             nus = nu_mskd.compressed()
@@ -223,7 +227,8 @@ class spectrum:
         spec = np.zeros_like(nu)
         for j in range(nu.size):
             if (flux[t_pos, j] > 1e-100) & (flux[t_pos + 1, j] > 1e-100):
-                s = -np.log(flux[t_pos + 1, j] / flux[t_pos, j]) / np.log(times[t_pos + 1] / times[t_pos])
+                s = -np.log(flux[t_pos + 1, j] / flux[t_pos, j]) / \
+                    np.log(times[t_pos + 1] / times[t_pos])
                 if s > 8.0:
                     s = 8.0
                 if s < -8.0:
