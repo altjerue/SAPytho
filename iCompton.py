@@ -1,9 +1,8 @@
-import numpy as np
 import SAPytho.constants as C
+import numpy as np
 import scipy.integrate as integrate
-import SAPytho.spectra as sp
 from joblib import Parallel, delayed
-
+#test comment
 
 class iCompton:
 
