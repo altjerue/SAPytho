@@ -1,10 +1,10 @@
 import numpy as np
 import numpy.ma as ma
 import scipy.integrate as sci_integ
-import SAPytho.misc as misc
-import SAPytho.pwlFuncs as pwlf
-import SAPytho.SRtoolkit as srtool
-import SAPytho.constants as C
+import SAPyto.misc as misc
+import SAPyto.pwlFuncs as pwlf
+import SAPyto.SRtoolkit as srtool
+import SAPyto.constants as C
 
 
 def conv2Jy(flux):
@@ -31,10 +31,10 @@ def Hz2m(nu):
     return C.cLight * 1e-2 / nu
 
 
-def m2Hz(lamb):
+def m2Hz(wavelength):
     '''Convert frequency in hertz to wavelength in meters
     '''
-    return C.cLight * 1e-2 / lamb
+    return C.cLight * 1e-2 / wavelength
 
 
 def sec2dy(time):
@@ -73,16 +73,16 @@ def cm2pc(distance):
     return distance / 3.08567758149137e18
 
 
-def specEnergyFlux(Inu, dL, z, D, R):
+def specEnergyFlux(Inu, dL, z, Doppler, radius):
     '''Calculates the spectral energy flux of a sphere.
     '''
-    return 4.0 * np.pi * R**2 * Inu * D**3 * (1.0 + z) / (3.0 * dL**2)
+    return 4 * np.pi * radius**2 * Inu * Doppler**3 * (1 + z) / (3 * dL**2)
 
 
-def EnergyFlux(nuInu, dL, D, R):
+def EnergyFlux(nuInu, dL, Doppler, radius):
     '''Calculates the energy flux of a sphere.
     '''
-    return 4.0 * np.pi * R**2 * nuInu * D**4 / (3.0 * dL**2)
+    return 4 * np.pi * radius**2 * nuInu * Doppler**4 / (3 * dL**2)
 
 
 #
