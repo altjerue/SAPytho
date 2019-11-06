@@ -1,10 +1,10 @@
 import numpy as np
 import numpy.ma as ma
 import scipy.integrate as sci_integ
-import SAPytho.misc as misc
-import SAPytho.pwlFuncs as pwlf
-import SAPytho.SRtoolkit as srtool
-import SAPytho.constants as C
+from . import misc
+from . import pwlFuncs as pwlf
+from . import SRtoolkit as srtool
+from . import constants as C
 import scipy.optimize as op
 
 

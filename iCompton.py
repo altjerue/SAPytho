@@ -1,8 +1,9 @@
-import SAPytho.constants as C
+from . import constants as C
 import numpy as np
 import scipy.integrate as integrate
 from joblib import Parallel, delayed
-#test comment
+# test comment
+
 
 class iCompton:
 
@@ -62,26 +63,26 @@ class iCompton:
     #  ###### #    # #  ####   ####  #   ##   #   #     #
 
     # mono energetic isotropic compton emissivity. see Dermer 6.74
-    def j_ic(E_s, E, g, p=2.2,alpha=0.5, Qe=1, Qp=1, rtol=1.48e-25, tol=1.48e-25, divmax=22):
+    def j_ic(E_s, E, g, p=2.2, alpha=0.5, Qe=1, Qp=1, rtol=1.48e-25, tol=1.48e-25, divmax=22):
         IC = iCompton()
-        gmin= g[0]
-        gmax= g[len(g)-1]
-        length=1
+        gmin = g[0]
+        gmax = g[len(g)-1]
+        length = 1
         if(type(E) is not float):
-            Emin=E[0]
-            Emax=E[len(E)-1]
+            Emin = E[0]
+            Emax = E[len(E)-1]
             length = len(E-1)
         else:
-            length=1
+            length = 1
 
         def longcode(h):
 
             for i in range(length):
                 x = E_s[h] / 510998.927602161
-                if(length>1):
+                if(length > 1):
                     y = E[i]
                 else:
-                    y=E
+                    y = E
                 if (4 * y) / (1 + (4 * y)) < x or y < x:
                     Min = (x / 2) + (1 / 2) * np.sqrt(((x**2) * y + x) / y)
 
@@ -117,6 +118,7 @@ class iCompton:
                     l = np.exp(l)
                     k = (l * IC.Fc(x, l, y) * IC.PowerLaw(l, 1, gmin, gmax, p)) / (l**2)
                     return k
+
                 def secondfunction(l):
                     # seems to run better if i call fc and power from inside this function
                     l = np.exp(l)
@@ -124,15 +126,17 @@ class iCompton:
                     return k
                 d = integrate.romberg(f, np.log(Min), np.log(Max), rtol=rtol,
                                       tol=tol, divmax=divmax)
+
                 def photonnorm(a):
-                    x=(1-a)/((C.me * (C.cLight ** 2))*((Emax**(1-a)) - (Emin**(1-a))))
+                    x = (1-a)/((C.me * (C.cLight ** 2))*((Emax**(1-a)) - (Emin**(1-a))))
                     return x
+
                 def enorm(p):
-                    x= (((p - 2) * 1) / (C.me * (C.cLight ** 2) *((1e2 ** (2 - p)) - (1e7 ** (2 - p)))))
+                    x = (((p - 2) * 1) / (C.me * (C.cLight ** 2) * ((1e2 ** (2 - p)) - (1e7 ** (2 - p)))))
                     return x
-                if(length>1):
-                    secondintegral= integrate.romberg(secondfunction, np.log(E[i]), np.log(E[i+1]), rtol=rtol, tol=tol, divmax=divmax)
-                    jic = (3 / 4) * C.sigmaT * enorm(p) * photonnorm(alpha)* C.cLight * ((x) ** 2) *secondintegral* d
+                if(length > 1):
+                    secondintegral = integrate.romberg(secondfunction, np.log(E[i]), np.log(E[i+1]), rtol=rtol, tol=tol, divmax=divmax)
+                    jic = (3 / 4) * C.sigmaT * enorm(p) * photonnorm(alpha) * C.cLight * ((x) ** 2) * secondintegral * d
                 else:
                     jic = (3 / 4) * C.sigmaT * enorm(p) * C.cLight * ((x / y)**2) * d
                 print(jic)

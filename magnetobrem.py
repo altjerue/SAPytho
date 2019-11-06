@@ -1,10 +1,10 @@
 import scipy.special as scisp
 import numpy as np
 import scipy.integrate as integrate
-from SAPytho import misc
-import SAPytho.SRtoolkit as SR
-import SAPytho.pwlFuncs as pwlf
-import SAPytho.constants as C
+from . import misc
+from . import SRtoolkit as SR
+# import pwlFuncs as pwlf
+from . import constants as C
 
 
 class mbs:
