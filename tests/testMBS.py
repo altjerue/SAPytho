@@ -2,7 +2,7 @@
 # In[]: Preamble
 import numpy as np
 # import scipy.optimize as op
-import SAPyto.magnetobrem as mbs
+import SAPytho.magnetobrem as mbs
 import matplotlib.pyplot as pl
 # pl.ion()
 

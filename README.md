@@ -1,4 +1,4 @@
-# Spectral Analysis with Python toolkit (SAPyto 🐸)
+# Spectral Analysis with Python toolkit (SAPytho 🐸)
 
 ## Purpose 
 
