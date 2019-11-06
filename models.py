@@ -1,11 +1,11 @@
 import numpy as np
 # import numpy.ma as ma
 from scipy import integrate  # , interpolate
-# import SAPyto.magnetobrem as mbs
-import SAPyto.constants as C
-import SAPyto.misc as misc
-# from SAPyto.spectra import spectrum as spec
-import SAPyto.SRtoolkit as SR
+# import SAPytho.magnetobrem as mbs
+import SAPytho.constants as C
+import SAPytho.misc as misc
+# from SAPytho.spectra import spectrum as spec
+import SAPytho.SRtoolkit as SR
 
 
 def Band_function(E_eV, Ep_eV, alpha, beta, A=1e0):

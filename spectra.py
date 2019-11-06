@@ -1,10 +1,11 @@
 import numpy as np
 import numpy.ma as ma
 import scipy.integrate as sci_integ
-import SAPyto.misc as misc
-import SAPyto.pwlFuncs as pwlf
-import SAPyto.SRtoolkit as srtool
-import SAPyto.constants as C
+import SAPytho.misc as misc
+import SAPytho.pwlFuncs as pwlf
+import SAPytho.SRtoolkit as srtool
+import SAPytho.constants as C
+import scipy.optimize as op
 
 
 def conv2Jy(flux):
@@ -196,14 +197,22 @@ class LightCurves:
 
         return licur
 
+    def luminosity(self, t, nus, jnu, vol):
+        Lnu = vol * jnu
+        Lum = np.zeros_like(t)
+        for i in range(t.size):
+            Lum[i] = sci_integ.simps(nus * Lnu[i, :], x=np.log(nus))
+        return Lum
 
-#
-#   ####  #####  ######  ####  ##### #####    ##
-#  #      #    # #      #    #   #   #    #  #  #
-#   ####  #    # #####  #        #   #    # #    #
-#       # #####  #      #        #   #####  ######
-#  #    # #      #      #    #   #   #   #  #    #
-#   ####  #      ######  ####    #   #    # #    #
+        #
+        #   ####  #####  ######  ####  ##### #####    ##
+        #  #      #    # #      #    #   #   #    #  #  #
+        #   ####  #    # #####  #        #   #    # #    #
+        #       # #####  #      #        #   #####  ######
+        #  #    # #      #      #    #   #   #   #  #    #
+        #   ####  #      ######  ####    #   #    # #    #
+
+
 class spectrum:
     def __init__(self):
         pass
@@ -300,7 +309,7 @@ class spectrum:
 def ComptonDom(nus, Fsyn, Fic, t_min, t_max, times):
     spec = spectrum()
     # pwli = pwlf.PwlInteg()
-    Nf = nus.size
+    # Nf = nus.size
 
     # NOTE  synchrotron spectrum and peak
     synint = spec.integ(t_min, t_max, nus, times, Fsyn)
@@ -328,3 +337,44 @@ def ComptonDom(nus, Fsyn, Fic, t_min, t_max, times):
 
     A_C = IC_peak / syn_peak
     return nu_syn, nu_IC, A_C
+
+    #
+    #  ######                                       #######
+    #  #     # #    #  ####  #####  ####  #    #    #       #      #    # #    #
+    #  #     # #    # #    #   #   #    # ##   #    #       #      #    #  #  #
+    #  ######  ###### #    #   #   #    # # #  #    #####   #      #    #   ##
+    #  #       #    # #    #   #   #    # #  # #    #       #      #    #   ##
+    #  #       #    # #    #   #   #    # #   ##    #       #      #    #  #  #
+    #  #       #    #  ####    #    ####  #    #    #       ######  ####  #    #
+    def Fph(nu_min, nu_max, freqs, Fnu):
+        '''Calculate the photon flux for the frequency band [nu_min, nu_max] from
+        a given flux density.
+        Input:
+            nu_min, nu_max: scalars
+            freqs: array
+            Fnu: array
+        Output:
+            Photon flux: scalar
+            photon flux spectral indices: array
+        '''
+        if nu_min < freqs[0] or nu_max > freqs[-1]:
+            return print('Error: nu_min and nu_max outside frequencies array')
+
+        nu_mskd = ma.masked_outside(freqs, nu_min, nu_max)
+        nus = nu_mskd.compressed()
+        flux = Fnu[~nu_mskd.mask] / nus
+        num_nus = len(nus)
+
+        integral = 0.0
+        pwli = pwlf.PwlInteg()
+        for i in range(num_nus - 1):
+            if (flux[i] > 1e-100) & (flux[i + 1] > 1e-100):
+                s = -np.log(flux[i + 1] / flux[i]) / np.log(nus[i + 1] / nus[i])
+                integral += flux[i] * nus[i] * pwli.P(nus[i + 1] / nus[i], s)
+        return nus[:-1], flux[:-1], integral / C.hPlanck
+
+    def photon_index(freqs, fluxes):
+        def f(x, a, b):
+            return a * x + b
+        popt, pcov = op.curve_fit(f, np.log10(freqs), np.log10(fluxes))
+        return np.power(10.0, f(np.log10(freqs), *popt)), popt, pcov

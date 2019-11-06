@@ -1,7 +1,7 @@
 import os
-import SAPyto.spectra as spec
-from SAPyto.misc import fortran_double
-import SAPyto.SRtoolkit as SR
+import SAPytho.spectra as spec
+from SAPytho.misc import fortran_double
+import SAPytho.SRtoolkit as SR
 import extractor.fromHDF5 as extr
 
 

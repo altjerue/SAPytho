@@ -1,7 +1,7 @@
 # In[]: Loading modules
 # import numpy as np
-import SAPyto.spectra as spec
-import SAPyto.SRtoolkit as SR
+import SAPytho.spectra as spec
+import SAPytho.SRtoolkit as SR
 import extractor.fromHDF5 as extr
 import matplotlib.pyplot as plt
 
