@@ -204,15 +204,14 @@ class LightCurves:
             Lum[i] = sci_integ.simps(nus * Lnu[i, :], x=np.log(nus))
         return Lum
 
-        #
-        #   ####  #####  ######  ####  ##### #####    ##
-        #  #      #    # #      #    #   #   #    #  #  #
-        #   ####  #    # #####  #        #   #    # #    #
-        #       # #####  #      #        #   #####  ######
-        #  #    # #      #      #    #   #   #   #  #    #
-        #   ####  #      ######  ####    #   #    # #    #
 
-
+#
+#   ####  #####  ######  ####  ##### #####    ##
+#  #      #    # #      #    #   #   #    #  #  #
+#   ####  #    # #####  #        #   #    # #    #
+#       # #####  #      #        #   #####  ######
+#  #    # #      #      #    #   #   #   #  #    #
+#   ####  #      ######  ####    #   #    # #    #
 class spectrum:
     def __init__(self):
         pass
@@ -338,43 +337,52 @@ def ComptonDom(nus, Fsyn, Fic, t_min, t_max, times):
     A_C = IC_peak / syn_peak
     return nu_syn, nu_IC, A_C
 
-    #
-    #  ######                                       #######
-    #  #     # #    #  ####  #####  ####  #    #    #       #      #    # #    #
-    #  #     # #    # #    #   #   #    # ##   #    #       #      #    #  #  #
-    #  ######  ###### #    #   #   #    # # #  #    #####   #      #    #   ##
-    #  #       #    # #    #   #   #    # #  # #    #       #      #    #   ##
-    #  #       #    # #    #   #   #    # #   ##    #       #      #    #  #  #
-    #  #       #    #  ####    #    ####  #    #    #       ######  ####  #    #
-    def Fph(nu_min, nu_max, freqs, Fnu):
-        '''Calculate the photon flux for the frequency band [nu_min, nu_max] from
-        a given flux density.
-        Input:
-            nu_min, nu_max: scalars
-            freqs: array
-            Fnu: array
-        Output:
-            Photon flux: scalar
-            photon flux spectral indices: array
-        '''
-        if nu_min < freqs[0] or nu_max > freqs[-1]:
-            return print('Error: nu_min and nu_max outside frequencies array')
 
-        nu_mskd = ma.masked_outside(freqs, nu_min, nu_max)
-        nus = nu_mskd.compressed()
-        flux = Fnu[~nu_mskd.mask] / nus
-        num_nus = len(nus)
+#  ######                                       #######
+#  #     # #    #  ####  #####  ####  #    #    #       #      #    # #    #
+#  #     # #    # #    #   #   #    # ##   #    #       #      #    #  #  #
+#  ######  ###### #    #   #   #    # # #  #    #####   #      #    #   ##
+#  #       #    # #    #   #   #    # #  # #    #       #      #    #   ##
+#  #       #    # #    #   #   #    # #   ##    #       #      #    #  #  #
+#  #       #    #  ####    #    ####  #    #    #       ######  ####  #    #
+def Fph(nu_min, nu_max, freqs, Fnu):
+    '''Calculate the photon flux for the frequency band [nu_min, nu_max] from
+    a given flux density.
+    Input:
+        nu_min, nu_max: scalars
+        freqs: array
+        Fnu: array
+    Output:
+        Photon flux: scalar
+        photon flux spectral indices: array
+    '''
+    if nu_min < freqs[0] or nu_max > freqs[-1]:
+        return print('Error: nu_min and nu_max outside frequencies array')
 
-        integral = 0.0
-        pwli = pwlf.PwlInteg()
-        for i in range(num_nus - 1):
-            if (flux[i] > 1e-100) & (flux[i + 1] > 1e-100):
-                s = -np.log(flux[i + 1] / flux[i]) / np.log(nus[i + 1] / nus[i])
-                integral += flux[i] * nus[i] * pwli.P(nus[i + 1] / nus[i], s)
-        return nus[:-1], flux[:-1], integral / C.hPlanck
+    nu_mskd = ma.masked_outside(freqs, nu_min, nu_max)
+    nus = nu_mskd.compressed()
+    flux = Fnu[~nu_mskd.mask] / nus
+    num_nus = len(nus)
 
-    def photon_index(freqs, fluxes):
-        def f(x, a, b):
-            return a * x + b
-        popt, pcov = op.curve_fit(f, np.log10(freqs), np.log10(fluxes))
-        return np.power(10.0, f(np.log10(freqs), *popt)), popt, pcov
+    integral = 0.0
+    pwli = pwlf.PwlInteg()
+    for i in range(num_nus - 1):
+        if (flux[i] > 1e-100) & (flux[i + 1] > 1e-100):
+            s = -np.log(flux[i + 1] / flux[i]) / np.log(nus[i + 1] / nus[i])
+            integral += flux[i] * nus[i] * pwli.P(nus[i + 1] / nus[i], s)
+    return nus[:-1], flux[:-1], integral / C.hPlanck
+
+
+#  #####  #    #  ####  #####  ####  #    #    # #    # #####
+#  #    # #    # #    #   #   #    # ##   #    # ##   # #    #
+#  #    # ###### #    #   #   #    # # #  #    # # #  # #    #
+#  #####  #    # #    #   #   #    # #  # #    # #  # # #    #
+#  #      #    # #    #   #   #    # #   ##    # #   ## #    #
+#  #      #    #  ####    #    ####  #    #    # #    # #####
+def photon_index(freqs, flux):
+    def line(x, a, b):
+        return a * x + b
+    lnu = np.log10(freqs)
+    lfl = np.log10(flux)
+    popt, pcov = op.curve_fit(line, lnu, lfl)
+    return np.power(10.0, line(np.log10(freqs), *popt)), popt, pcov
