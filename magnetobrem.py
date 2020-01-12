@@ -164,7 +164,7 @@ class mbs:
 #  #      #    # #      #      # # #    # #   #     #
 #  #      #    # # #    # #    # #  #  #  #   #     #
 #  ###### #    # #  ####   ####  #   ##   #   #     #
-def j_mb(nu, g, N, B, Rsync=False):
+def j_mb(nu, g, N, B, Rsync=False, rtol=1.48e-25, tol=1.48e-25, divmax=22):
     '''Description:
     This function reproduces the MBS emissivity from a power-law distribution.
     '''
@@ -191,16 +191,12 @@ def j_mb(nu, g, N, B, Rsync=False):
                     q = 8.
                 if (q < -8.):
                     q = -8.
-
-                I2 = integrate.romberg(f, np.log(g[k]), np.log(g[k + 1]), args=(chi[j], q), divmax=15)
+                I2 = integrate.romberg(f, np.log(g[k]), np.log(g[k + 1]), args=(chi[j], q), rtol=1.48e-25, tol=1.48e-25, divmax=22)
                 sum = sum + N[k] * I2 * g[k]**q
-
             if (sum < 1e-200):
                 sum = 0
         return sum
-
     jnu = Parallel(n_jobs=-2)(delayed(integrals)(j) for j in range(nu.size))
-    print(jnu)
     return C.jmbConst * nuB * np.asarray(jnu)
 
 
@@ -211,7 +207,7 @@ def j_mb(nu, g, N, B, Rsync=False):
 #  ###### #    #      # #    # #####  #####    #   # #    # #  # #
 #  #    # #    # #    # #    # #   #  #        #   # #    # #   ##
 #  #    # #####   ####   ####  #    # #        #   #  ####  #    #
-def a_mb(nu, g, N, B, Rsync=False):
+def a_mb(nu, g, N, B, Rsync=False, rtol=1.48e-25, tol=1.48e-25, divmax=22):
     '''Description:
     This function reproduces the MBS absorption from a power-law distribution.
     '''
@@ -229,7 +225,8 @@ def a_mb(nu, g, N, B, Rsync=False):
     chi = nu / nuB
     anu = np.zeros_like(nu)
 
-    for j in range(nu.size):
+    def integrals(j):
+        sum = 0
         for k in range(g.size - 1):
             if (N[k] > 1e-100 and N[k + 1] > 1e-100):
                 q = -np.log(N[k + 1] / N[k]) / np.log(g[k + 1] / g[k])
@@ -237,10 +234,10 @@ def a_mb(nu, g, N, B, Rsync=False):
                     q = 8.
                 if (q < -8.):
                     q = -8.
-
-                A2 = integrate.romberg(f, np.log(g[k]), np.log(g[k + 1]), args=(chi[j], q), divmax=15)
-                anu[j] = anu[j] + N[k] * A2 * g[k]**q
-            if (anu[j] < 1e-200):
-                anu[j] = 0.
-
-    return C.ambConst * nuB * anu / nu**2
+                A2 = integrate.romberg(f, np.log(g[k]), np.log(g[k + 1]), args=(chi[j], q), rtol=1.48e-25, tol=1.48e-25, divmax=22)
+                sum = sum + N[k] * A2 * g[k]**q
+            if (sum < 1e-200):
+                sum = 0
+        return sum
+    anu = Parallel(n_jobs=-2)(delayed(integrals)(j) for j in range(nu.size))
+    return C.ambConst * nuB * np.asarray(anu) / nu**2
