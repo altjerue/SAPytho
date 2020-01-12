@@ -5,13 +5,20 @@ from . import misc
 from . import pwlFuncs as pwlf
 from . import SRtoolkit as srtool
 from . import constants as C
+from . import RadTrans as RT
 import scipy.optimize as op
 
 
-def conv2Jy(flux):
+def erg2Jy(flux):
     '''Convert flux density (in egs cm^{-2} s^{-1} Hz^{-1}) to janskys.
     '''
     return flux * 1e23
+
+
+def Jy2erg(flux):
+    '''Convert flux density in jansky to egs cm^{-2} s^{-1} Hz^{-1}.
+    '''
+    return flux * 1e-23
 
 
 def Hz2eV(nu):
@@ -74,16 +81,26 @@ def cm2pc(distance):
     return distance / 3.08567758149137e18
 
 
-def specEnergyFlux(Inu, dL, z, Doppler, radius):
+def specEnergyFlux(nu, jnu, anu, dL, z, Doppler, radius, volume):
     '''Calculates the spectral energy flux of a sphere.
     '''
-    return 4 * np.pi * radius**2 * Inu * Doppler**3 * (1 + z) / (3 * dL**2)
+    try:
+        len(nu)
+        Fnu = Doppler**3 * (1 + z) * volume * jnu * RT.OptDepthBlob_v(anu, radius) / (4 * np.pi * dL**2)
+    except (TypeError, ValueError):
+        Fnu = Doppler**3 * (1 + z) * volume * jnu * RT.OptDepthBlob_s(anu, radius) / (4 * np.pi * dL**2)
+    return Fnu
 
 
-def EnergyFlux(nuInu, dL, Doppler, radius):
+def EnergyFlux(nu, jnu, anu, dL, Doppler, radius, volume):
     '''Calculates the energy flux of a sphere.
     '''
-    return 4 * np.pi * radius**2 * nuInu * Doppler**4 / (3 * dL**2)
+    try:
+        len(nu)
+        nuF_nu = Doppler**4 * volume * nu * jnu * RT.OptDepthBlob_v(anu, radius) / (4 * np.pi * dL**2)
+    except (TypeError, ValueError):
+        nuF_nu = Doppler**4 * volume * nu * jnu * RT.OptDepthBlob_s(anu, radius) / (4 * np.pi * dL**2)
+    return nuF_nu
 
 
 #

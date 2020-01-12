@@ -5,6 +5,7 @@ from . import misc
 from . import SRtoolkit as SR
 # import pwlFuncs as pwlf
 from . import constants as C
+from joblib import Parallel, delayed
 
 
 class mbs:
@@ -181,7 +182,8 @@ def j_mb(nu, g, N, B, Rsync=False):
     chi = nu / nuB
     jnu = np.zeros_like(nu)
 
-    for j in range(nu.size):
+    def integrals(j):
+        sum = 0
         for k in range(g.size - 1):
             if (N[k] > 1e-100 and N[k + 1] > 1e-100):
                 q = -np.log(N[k + 1] / N[k]) / np.log(g[k + 1] / g[k])
@@ -191,12 +193,15 @@ def j_mb(nu, g, N, B, Rsync=False):
                     q = -8.
 
                 I2 = integrate.romberg(f, np.log(g[k]), np.log(g[k + 1]), args=(chi[j], q), divmax=15)
-                jnu[j] = jnu[j] + N[k] * I2 * g[k]**q
+                sum = sum + N[k] * I2 * g[k]**q
 
-            if (jnu[j] < 1e-200):
-                jnu[j] = 0.
+            if (sum < 1e-200):
+                sum = 0
+        return sum
 
-    return C.jmbConst * nuB * jnu
+    jnu = Parallel(n_jobs=-2)(delayed(integrals)(j) for j in range(nu.size))
+    print(jnu)
+    return C.jmbConst * nuB * np.asarray(jnu)
 
 
 #
