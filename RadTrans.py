@@ -19,7 +19,7 @@ def Inu_Guold79(jnu, anu, R):
 
 
 def OptDepthBlob_v(anu, R):
-    tau = anu * R
+    tau = 2 * R * anu
     u = np.zeros_like(anu)
     for j in range(anu.size):
         if (tau[j] <= 1e-10):
@@ -27,7 +27,7 @@ def OptDepthBlob_v(anu, R):
         else:
             if tau[j] > 100:
                 u[j] = 0.5 - 1 / tau[j]**2
-            elif (tau[j] >= 0.01) & (tau[j] <= 100):
+            elif (tau[j] >= 0.01) and (tau[j] <= 100):
                 u[j] = 0.5 * (1 - 2 * (1 - (1 + tau[j]) * np.exp(-tau[j])) / tau[j]**2)
             else:
                 u[j] = (tau[j] / 3) - 0.125 * tau[j]**2
@@ -42,7 +42,7 @@ def OptDepthBlob_s(absor, R):
     else:
         if (tau > 100):
             u = 0.5 - 1 / tau**2
-        elif (tau >= 0.01 and tau <= 100.):
+        elif (tau >= 0.01) and (tau <= 100):
             u = 0.5 * (1 - 2 * (1 - (1 + tau) * np.exp(-tau)) / tau**2)
         else:
             u = (tau / 3) - 0.125 * tau**2

@@ -164,7 +164,7 @@ class mbs:
 #  #      #    # #      #      # # #    # #   #     #
 #  #      #    # # #    # #    # #  #  #  #   #     #
 #  ###### #    # #  ####   ####  #   ##   #   #     #
-def j_mb(nu, g, N, B, Rsync=False, rtol=1.48e-25, tol=1.48e-25, divmax=22):
+def j_mb(nu, g, N, B, Rsync=False, rtol=1.48e-8, tol=1.48e-8, divmax=10):
     '''Description:
     This function reproduces the MBS emissivity from a power-law distribution.
     '''
@@ -179,10 +179,10 @@ def j_mb(nu, g, N, B, Rsync=False, rtol=1.48e-25, tol=1.48e-25, divmax=22):
             return g**(1.0 - q) * MBS.RMAfit(Xc, g)
 
     nuB = C.nuConst * B
-    chi = nu / nuB
+    chis = nu / nuB
     jnu = np.zeros_like(nu)
 
-    def integrals(j):
+    def integrals(c):
         sum = 0
         for k in range(g.size - 1):
             if (N[k] > 1e-100 and N[k + 1] > 1e-100):
@@ -191,12 +191,12 @@ def j_mb(nu, g, N, B, Rsync=False, rtol=1.48e-25, tol=1.48e-25, divmax=22):
                     q = 8.
                 if (q < -8.):
                     q = -8.
-                I2 = integrate.romberg(f, np.log(g[k]), np.log(g[k + 1]), args=(chi[j], q), rtol=1.48e-25, tol=1.48e-25, divmax=22)
+                I2 = integrate.romberg(f, np.log(g[k]), np.log(g[k + 1]), args=(c, q), rtol=rtol, tol=tol, divmax=divmax)
                 sum = sum + N[k] * I2 * g[k]**q
             if (sum < 1e-200):
                 sum = 0
         return sum
-    jnu = Parallel(n_jobs=-2)(delayed(integrals)(j) for j in range(nu.size))
+    jnu = Parallel(n_jobs=-2)(delayed(integrals)(chi) for chi in chis)
     return C.jmbConst * nuB * np.asarray(jnu)
 
 
@@ -207,7 +207,7 @@ def j_mb(nu, g, N, B, Rsync=False, rtol=1.48e-25, tol=1.48e-25, divmax=22):
 #  ###### #    #      # #    # #####  #####    #   # #    # #  # #
 #  #    # #    # #    # #    # #   #  #        #   # #    # #   ##
 #  #    # #####   ####   ####  #    # #        #   #  ####  #    #
-def a_mb(nu, g, N, B, Rsync=False, rtol=1.48e-25, tol=1.48e-25, divmax=22):
+def a_mb(nu, g, N, B, Rsync=False, rtol=1.48e-5, tol=1.48e-5, divmax=10):
     '''Description:
     This function reproduces the MBS absorption from a power-law distribution.
     '''
@@ -222,10 +222,10 @@ def a_mb(nu, g, N, B, Rsync=False, rtol=1.48e-25, tol=1.48e-25, divmax=22):
             return g**(-q) * MBS.RMAfit(Xc, g) * (q + 1 + g**2 / (g**2 - 1))
 
     nuB = C.nuConst * B
-    chi = nu / nuB
+    chis = nu / nuB
     anu = np.zeros_like(nu)
 
-    def integrals(j):
+    def integrals(c):
         sum = 0
         for k in range(g.size - 1):
             if (N[k] > 1e-100 and N[k + 1] > 1e-100):
@@ -234,10 +234,10 @@ def a_mb(nu, g, N, B, Rsync=False, rtol=1.48e-25, tol=1.48e-25, divmax=22):
                     q = 8.
                 if (q < -8.):
                     q = -8.
-                A2 = integrate.romberg(f, np.log(g[k]), np.log(g[k + 1]), args=(chi[j], q), rtol=1.48e-25, tol=1.48e-25, divmax=22)
+                A2 = integrate.romberg(f, np.log(g[k]), np.log(g[k + 1]), args=(c, q), rtol=rtol, tol=tol, divmax=divmax)
                 sum = sum + N[k] * A2 * g[k]**q
             if (sum < 1e-200):
                 sum = 0
         return sum
-    anu = Parallel(n_jobs=-2)(delayed(integrals)(j) for j in range(nu.size))
+    anu = Parallel(n_jobs=-2)(delayed(integrals)(chi) for chi in chis)
     return C.ambConst * nuB * np.asarray(anu) / nu**2
