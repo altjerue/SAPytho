@@ -16,6 +16,7 @@ sigmaSB = const.sigma_sb.cgs.value
 kB = const.k_B.cgs.value
 
 nuConst = eCharge / (twopi * me * cLight)
+PmbConst = twopi * np.sqrt(3) * eCharge**2 / cLight
 jmbConst = np.sqrt(3) * eCharge**2 / (2. * cLight)
 ambConst = np.sqrt(3) * eCharge**2 / (4. * me * cLight)
 chunche_c100g100 = 2.2619939050180366385e-6

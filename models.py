@@ -218,17 +218,17 @@ class SPN98(object):
     #  #      #      #    #  #  #  #      #    #
     #  #      ######  ####  #    # ######  ####
     #
-    def Fmax(self, td):
+    def Fmax(self, td, Ne, B, pwise=True):
         '''Flux in micro janskys (uJy)'''
-        if self.adiab:
-            # NOTE: Following Eq. (11)
-            return 1.1e5 * np.sqrt(self.eps_B * self.n1) * self.E52 / self.D28**2 * np.ones(td.size)
+        if pwise:
+            if self.adiab:
+                # NOTE: Following Eq. (11)
+                return 1.1e5 * np.sqrt(self.eps_B * self.n1) * self.E52 / self.D28**2 * np.ones(td.size)
+            else:
+                # NOTE: Following Eq. (12)
+                return 4.5e3 * np.sqrt(self.eps_B) * (self.E52 / self.G2)**(8. / 7.) * self.n1**(5. / 14.) / (td**(3. / 7.) * self.D28**2)
         else:
-            # NOTE: Following Eq. (12)
-            return 4.5e3 * np.sqrt(self.eps_B) * (self.E52 / self.G2)**(8.0 / 7.0) * self.n1**(5.0 / 14.0) / (td**(3.0 / 7.0) * self.D28**2)
-
-    def Fmax_alt(self, Ne, B, dL, D, z):
-        return Ne * C.me * C.cLight**2 * C.sigmaT * D**3 * B / (12 * np.pi * C.eCharge * dL**2 * (1 + z))
+            return Ne * C.me * C.cLight**2 * C.sigmaT * B / (12. * np.pi * C.eCharge * self.dL**2)
 
     def fast_cooling(self, nu, nua, nuc, num, Fnu_max):
         return np.piecewise(nu,
@@ -264,11 +264,9 @@ class SPN98(object):
         tc = self.tc(nu15)
         tm = self.tm(nu15)
         t0 = self.t0()
-        # Fnu_max = self.Fmax(td) * (1 + self.z)
-        B = np.sqrt(32 * np.pi * C.mp * self.eps_B * self.n1) * G * C.cLight
-        Pmax = C.me * C.cLight**2 * C.sigmaT * G * B / (3 * C.eCharge)
-        # Ne = 4 * np.pi * R**3 * n_e / 3
-        Fnu_max = Ne * Pmax * (1 + self.z) / (4 * np.pi * self.dL**2)
+        B = np.sqrt(32. * np.pi * C.mp * self.eps_B * self.n1) * G * C.cLight
+        Fnu_max = self.Fmax(td, Ne, B, pwise=False) * (1 + self.z)
+        # Fnu_max = Ne * Pmax * (1 + self.z) / (4 * np.pi * self.dL**2)
         for i in range(t.size):
             for j in range(nu.size):
                 if td[i] < t0:
