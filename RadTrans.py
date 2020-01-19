@@ -1,4 +1,5 @@
 import numpy as np
+from . import constants as C
 
 
 def Inu_Guold79(jnu, anu, R):
@@ -75,3 +76,14 @@ def intensity_slab(jnu, anu, s):
         else:
             Inu[j] = s * jnu[j]
     return Inu
+
+
+#  ######                              ######
+#  #     # #        ##    ####  #    # #     #  ####  #####  #   #
+#  #     # #       #  #  #    # #   #  #     # #    # #    #  # #
+#  ######  #      #    # #      ####   ######  #    # #    #   #
+#  #     # #      ###### #      #  #   #     # #    # #    #   #
+#  #     # #      #    # #    # #   #  #     # #    # #    #   #
+#  ######  ###### #    #  ####  #    # ######   ####  #####    #
+def BlackBody_intens(nu, T):
+    return 2 * C.hPlanck * nu**3 / (C.cLight**2 * (np.exp(C.hPlanck * nu / (C.kBoltz * T)) - 1))

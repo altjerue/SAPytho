@@ -13,7 +13,7 @@ me = const.m_e.cgs.value
 mp = const.m_p.cgs.value
 sigmaT = const.sigma_T.cgs.value
 sigmaSB = const.sigma_sb.cgs.value
-kB = const.k_B.cgs.value
+kBoltz = const.k_B.cgs.value
 
 nuConst = eCharge / (twopi * me * cLight)
 PmbConst = twopi * np.sqrt(3) * eCharge**2 / cLight
