@@ -86,4 +86,8 @@ def intensity_slab(jnu, anu, s):
 #  #     # #      #    # #    # #   #  #     # #    # #    #   #
 #  ######  ###### #    #  ####  #    # ######   ####  #####    #
 def BlackBody_intens(nu, T):
-    return 2 * C.hPlanck * nu**3 / (C.cLight**2 * (np.exp(C.hPlanck * nu / (C.kBoltz * T)) - 1))
+    return 2 * C.hPlanck * nu**3 / (C.cLight**2 * (np.exp(C.hPlanck * nu / (C.kBoltz * T)) - 1.))
+
+
+def BlackBodyEnerDens(T):
+    return 4. * C.sigmaSB * T**4 / C.cLight

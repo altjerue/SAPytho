@@ -130,9 +130,9 @@ def chebev(x, c, xmin, xmax):
 #  #    # #    # #      #    # #   #  #    #
 #   ####   ####  ######  ####  #    #  ####
 def col_tab(num=1):
-    if num is 1:
+    if num == 1:
         #  matplotlib default
         return ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
-    elif num is 2:
+    elif num == 2:
         # xkcd colors
         return ['xkcd:blue', 'xkcd:orange', 'xkcd:green', 'xkcd:red', 'xkcd:purple', 'xkcd:brown', 'xkcd:pink', 'xkcd:gray', 'xkcd:olive', 'xkcd:cyan']
