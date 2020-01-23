@@ -190,7 +190,8 @@ class SPN98(object):
         return 0.69 * (self.eps_B * self.E52)**(1.0 / 3.0) * self.eps_e**(4.0 / 3.0)**(1.0 / 3.0) * nu15**(-2.0 / 3.0) * np.ones(nu15.size)
 
     def t0(self):
-        return (1. + self.z) * 8. * self.E0 * self.n_ext * (C.mp / C.me)**4 * (2. * C.sigmaT * self.eps_B * self.eps_e * self.fp / 3.)**2 / (3. * np.pi * C.mp * C.cLight**3)
+        return 1.2 * (1. + self.z) * self.n_ext * self.E52 * (self.fp * self.epse1 * self.epsB2)**2
+        # return (1. + self.z) * 8. * self.E0 * self.n_ext * (C.mp / C.me)**4 * (2. * C.sigmaT * self.eps_B * self.eps_e * self.fp / 3.)**2 / (3. * np.pi * C.mp * C.cLight**3)
 
     #
     #  ###### #      #    # #    # ######  ####
@@ -234,7 +235,7 @@ class SPN98(object):
                              (nuc / num)**(-0.5 * (self.pind - 1.)) * (nu / nuc)**(-0.5 * self.pind) * Fnu_max,
                              (nuc / num)**(-0.5 * (self.pind - 1.)) * (nux / nuc)**(-0.5 * self.pind) * np.exp(1. - nu / nux) * Fnu_max]) / (self.pind - 1.)
 
-    def fluxSPN98(self, nu, t):
+    def fluxSPN98(self, nu, t, urad=None):
         nu15 = nu / 1e15
         td = t / 8.64e4
         R, G = self.BlastWave(t)
@@ -242,9 +243,12 @@ class SPN98(object):
         B = np.sqrt(32. * np.pi * C.mp * self.eps_B * self.n_ext) * (G - 1.) * C.cLight
         Ne = 4. * np.pi * R**3 * self.n_ext / 3.
         nux = 2e23 * self.eps_x * (self.E52 / ((1. + self.z)**5 * td**3 * self.n_ext))**0.125
-        # gc = 1.8e3 * (td / ((1. + self.z) * self.n_ext**5 * (100. * self.E52)**3))**0.125 / self.epsB2
-        # nuc = 2.8e6 * B * gc**2 * G / (1. + self.z)
-        nuc = self.nuc(td)
+        if urad is None:
+            nuc = self.nuc(td)
+        else:
+            uB = 0.125 * B**2 / np.pi
+            gc = 1.8e3 * (td / ((1. + self.z) * self.n_ext**5 * (100. * self.E52)**3))**0.125 / (self.epsB2 * (1. + urad / uB))
+            nuc = 2.8e6 * B * gc**2 * G / (1. + self.z)
         nua = np.ones_like(t)
         num = self.num(td)
         nu0 = self.nu0()
@@ -254,7 +258,7 @@ class SPN98(object):
         Fnu_max = self.Fmax(td, Ne, B, G, pwise=False) * (1. + self.z)
         for i in range(t.size):
             for j in range(nu.size):
-                if t[i] < t0:
+                if td[i] < t0:
                     nua[i] = self.nua_fast(t[i], G[i])
                     flux[i, j] = self.fast_cooling(nu[j], nua[i], nuc[i], num[i], nux[i], Fnu_max[i])
                 else:
