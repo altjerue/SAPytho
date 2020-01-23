@@ -117,13 +117,13 @@ class SPN98(object):
     def params(self):
         self.eps_e = 0.6
         self.eps_B = 0.5
+        self.eps_x = 0.35
         self.G0 = 1.0
-        self.n1 = 1.0
+        self.n_ext = 1.0
         self.E0 = 1.0
         self.dL = 1.0
         self.z = 1.0
         self.pind = 2.5
-        self.adiab = True
 
     def __init__(self, **kwargs):
         self.params()
@@ -131,17 +131,15 @@ class SPN98(object):
         self.G2 = self.G0 / 100
         self.E52 = self.E0 / 1e52
         self.D28 = self.dL / 1e28
+        self.epsB2 = self.eps_B / 0.01
+        self.epse1 = self.eps_e / 0.1
+        self.fp = ((self.pind - 2.) / (self.pind - 1.))
+        self.n1 = self.n_ext
 
-    def BlastWave(self, tobs, adiab=True):
-        t = tobs / (1 + self.z)
-        M = self.E0 / (self.G0 * C.cLight**2)
-        L = (17 * M / (16 * np.pi * C.mp * self.n1))**(1 / 3)
-        if adiab:
-            Rshk = (17 * self.E0 * t / (4 * np.pi * C.mp * self.n1 * C.cLight))**0.25
-            Gshk = (17 * self.E0 / (1024 * np.pi * C.mp * self.n1 * C.cLight**5 * t**3))**(0.125)
-        else:
-            Rshk = (4 * C.cLight * t / L)**(1 / 7) * L
-            Gshk = (4 * C.cLight * t / L)**(-3 / 7)
+    def BlastWave(self, tobs):
+        t = tobs / (1. + self.z)
+        Rshk = (17 * self.E0 * t / (4 * np.pi * C.mp * self.n1 * C.cLight))**0.25
+        Gshk = (17 * self.E0 / (1024 * np.pi * C.mp * self.n1 * C.cLight**5 * t**3))**(0.125)
         for i in range(Gshk.size):
             Gshk[i] = np.maximum(np.minimum(Gshk[i], self.G0), 1.001)
         return Rshk, Gshk
@@ -153,35 +151,29 @@ class SPN98(object):
     #  #      #####  #      #  # #      #
     #  #      #   #  #      #   #  #    #
     #  #      #    # ######  ### #  ####
-    #
+
     def nuc(self, td):
-        if self.adiab:
-            # NOTE: Following Eq. (11)
-            return 2.7e12 * self.eps_B**(-1.5) / (np.sqrt(self.E52 * td * (1 + self.z)) * self.n1)
-        else:
-            # NOTE: Following Eq. (12)
-            return 1.3e13 * (self.G2 / self.E52)**(4.0 / 7.0) * self.eps_B**(-1.5) * td**(-2.0 / 7.0) * self.n1**(-13.0 / 14.0)
+        # NOTE: Following Eq. (11)
+        # return 2.7e12 * self.eps_B**(-1.5) / (np.sqrt(self.E52 * td * (1 + self.z)) * self.n1)
+        return 4.4e15 / (np.sqrt(self.epsB2**3 * self.E52 * td * (1. + self.z)) * self.n_ext)
 
     def num(self, td):
-        if self.adiab:
-            # NOTE: Following Eq. (11)
-            return 5.7e14 * self.eps_e**2 * np.sqrt((1 + self.z) * self.E52 * self.eps_B) * td**(-1.5)
-        else:
-            # NOTE: Following Eq. (12)
-            return 1.2e14 * np.sqrt(self.eps_B) * self.eps_e**2 * (self.E52 / self.G2)**(4.0 / 7.0) * self.n1**(-1.0 / 14.0) * td**(-12.0 / 7.0)
+        # NOTE: Following Eq. (11)
+        # return 5.7e14 * self.eps_e**2 * np.sqrt((1. + self.z) * self.E52 * self.eps_B) * td**(-1.5)
+        return 3e12 * np.sqrt((1. + self.z) * self.E52 * self.epsB2 / td**3) * (self.epse1 * self.fp)**2
 
-    def nua_fast(self, td):
-        return 0.15e9 * (self.eps_B / 0.01)**1.2 * self.E52**0.7 * self.n1**1.1 / np.sqrt(td * (1 + self.z))
+    def nua_fast(self, t, G):
+        # td = t / 8.64e4
+        # return 0.15e9 * (self.eps_B / 0.01)**1.2 * self.E52**0.7 * self.n1**1.1 / np.sqrt(td * (1 + self.z))
+        return 1e7 * self.epsB2**1.2 * self.n_ext**1.8 * (G / 100.)**5.6 * t**1.6 / (1. + self.z)**2.6
 
-    def nua_slow(self):
-        return 3.6e9 * (0.5 / self.eps_e) * (self.E52 * self.eps_B / 0.01)**0.2 * self.n1**0.6 / (1 + self.z)
+    def nua_slow(self, t, G):
+        # td = t / 8.64e4
+        # return 3.6e9 * (0.5 / self.eps_e) * (self.E52 * self.eps_B / 0.01)**0.2 * self.n1**0.6 / (1 + self.z)
+        return 1.5e4 * ((self.pind - 1.) * G / ((self.pind + 2. / 3.) * (1. + self.z)))**1.6 * self.eps_B**0.2 * self.n_ext**0.8 * ((self.pind + 2.) * t)**0.6 / (self.eps_e * (self.pind - 2.))
 
     def nu0(self):
-        if self.adiab:
-            nu0 = 1.8e11 * self.eps_B**(-2.5) * self.n1**(-1.5) / (self.eps_e * self.E52)
-        else:
-            nu0 = 8.5e12 * self.eps_B**(-1.9) * self.eps_e**(-0.4) * self.n1**(-1.1) * (self.G2 / self.E52)**0.8
-        return nu0
+        return 1.8e11 * self.eps_B**(-2.5) * self.n1**(-1.5) / (self.eps_e * self.E52)
 
     #
     #  ##### # #    # ######  ####
@@ -192,23 +184,13 @@ class SPN98(object):
     #    #   # #    # ######  ####
     #
     def tc(self, nu15):
-        if self.adiab:
-            return 7.3e-6 * np.ones(nu15.size) / (self.eps_B**3 * self.E52 * self.n1**2 * nu15**2)
-        else:
-            return 2.7e-7 * self.eps_B**(-0.25 * 21.0) * (self.G2 / self.E52)**2 * self.n1**(-0.25 * 13.0) * nu15**(-0.5 * 7.0)
+        return 7.3e-6 * np.ones(nu15.size) / (self.eps_B**3 * self.E52 * self.n1**2 * nu15**2)
 
     def tm(self, nu15):
-        if self.adiab:
-            return 0.69 * (self.eps_B * self.E52)**(1.0 / 3.0) * self.eps_e**(4.0 / 3.0)**(1.0 / 3.0) * nu15**(-2.0 / 3.0) * np.ones(nu15.size)
-        else:
-            return 0.29 * self.eps_B**(7.0 / 24.0) * self.eps_e**(7.0 / 6.0) * (self.E52 / self.G2)**(1.0 / 3.0) * self.n1**(-1.0 / 24.0) * nu15**(-7.0 / 12.0)
+        return 0.69 * (self.eps_B * self.E52)**(1.0 / 3.0) * self.eps_e**(4.0 / 3.0)**(1.0 / 3.0) * nu15**(-2.0 / 3.0) * np.ones(nu15.size)
 
     def t0(self):
-        if self.adiab:
-            t0 = 210.0 * (self.eps_B * self.eps_e)**2 * self.E52 * self.n1
-        else:
-            t0 = 4.6 * (self.eps_B * self.eps_e)**1.4 * (self.E52 / self.G2)**0.8 * self.n1**0.6
-        return t0
+        return (1. + self.z) * 8. * self.E0 * self.n_ext * (C.mp / C.me)**4 * (2. * C.sigmaT * self.eps_B * self.eps_e * self.fp / 3.)**2 / (3. * np.pi * C.mp * C.cLight**3)
 
     #
     #  ###### #      #    # #    # ######  ####
@@ -218,63 +200,66 @@ class SPN98(object):
     #  #      #      #    #  #  #  #      #    #
     #  #      ######  ####  #    # ######  ####
     #
-    def Fmax(self, td, Ne, B, pwise=True):
+    def Fmax(self, td, Ne, B, G, pwise=True):
         '''Flux in micro janskys (uJy)'''
         if pwise:
-            if self.adiab:
-                # NOTE: Following Eq. (11)
-                return 1.1e5 * np.sqrt(self.eps_B * self.n1) * self.E52 / self.D28**2 * np.ones(td.size)
-            else:
-                # NOTE: Following Eq. (12)
-                return 4.5e3 * np.sqrt(self.eps_B) * (self.E52 / self.G2)**(8. / 7.) * self.n1**(5. / 14.) / (td**(3. / 7.) * self.D28**2)
+            # NOTE: Following Eq. (11)
+            return 1.1e5 * np.sqrt(self.eps_B * self.n1) * self.E52 / self.D28**2 * np.ones(td.size)
         else:
-            return Ne * C.me * C.cLight**2 * C.sigmaT * B / (12. * np.pi * C.eCharge * self.dL**2)
+            return Ne * G * C.me * C.cLight**2 * C.sigmaT * B / (12. * np.pi * C.eCharge * self.dL**2)
 
-    def fast_cooling(self, nu, nua, nuc, num, Fnu_max):
+    def fast_cooling(self, nu, nua, nuc, num, nux, Fnu_max):
         return np.piecewise(nu,
-                            [num > nu,  # nu < nua,
-                             # (num > nu) & (nu >= nua),
-                             (num >= nu) & (nu >= nuc),
-                             nu > num],
-                            [  # (nua / nuc)**(1/3) * (nu / nua)**2 * Fnu_max,
+                            [nu < nua,  # num > nu,  #
+                             (nu <= nuc) & (nu >= nua),
+                             (nu <= num) & (nu > nuc),
+                             (nu > num) & (nu <= nux),
+                             nu > nux],
+                            [(nua / nuc)**(1/3) * (nu / nua)**2 * Fnu_max,
                              (nu / nuc)**(1.0 / 3.0) * Fnu_max,
                              Fnu_max / np.sqrt(nu / nuc),
-                             (nu / num)**(-0.5 * self.pind) * Fnu_max / np.sqrt(num / nuc)])
+                             (nu / num)**(-0.5 * self.pind) * Fnu_max / np.sqrt(num / nuc),
+                             (nux / nuc)**(-0.5 * self.pind) * np.exp(1. - nu / nux) * Fnu_max / np.sqrt(num / nuc)])
 
-    def slow_cooling(self, nu, nua, nuc, num, Fnu_max):
+    def slow_cooling(self, nu, nua, nuc, num, nux, Fnu_max):
         return np.piecewise(nu,
-                            [num > nu,  # nu < nua,
-                             # (num > nu) & (nu >= nua),
-                             (nuc >= nu) & (nu >= num),
-                             nu > nuc],
-                            [  # (nua / nuc)**(1/3) * (nu / nua)**2 * Fnu_max,
+                            [nu < nua,  # num > nu,  #
+                             (nu <= num) & (nu >= nua),
+                             (nu <= nuc) & (nu > num),
+                             (nu > nuc) & (nu <= nux),
+                             nu > nux],
+                            [(nua / nuc)**(1/3) * (nu / nua)**2 * Fnu_max,
                              (nu / num)**(1/3) * Fnu_max,
                              (nu / num)**(-0.5 * (self.pind - 1.0)) * Fnu_max,
-                             (nuc / num)**(-0.5 * (self.pind - 1.0)) * (nu / nuc)**(-0.5 * self.pind) * Fnu_max])
+                             (nuc / num)**(-0.5 * (self.pind - 1.)) * (nu / nuc)**(-0.5 * self.pind) * Fnu_max,
+                             (nuc / num)**(-0.5 * (self.pind - 1.)) * (nux / nuc)**(-0.5 * self.pind) * np.exp(1. - nu / nux) * Fnu_max]) / (self.pind - 1.)
 
-    # def fluxSPN98(self, nu, t):
-    def fluxSPN98(self, nu, t, G, R, Ne):
-        nu15 = nu * (1 + self.z) / 1e15
-        td = t / (8.64e4 * (1 + self.z))
+    def fluxSPN98(self, nu, t):
+        nu15 = nu / 1e15
+        td = t / 8.64e4
+        R, G = self.BlastWave(t)
         flux = np.ndarray((t.size, nu.size))
-        nua = np.ones_like(t)
+        B = np.sqrt(32. * np.pi * C.mp * self.eps_B * self.n_ext) * (G - 1.) * C.cLight
+        Ne = 4. * np.pi * R**3 * self.n_ext / 3.
+        nux = 2e23 * self.eps_x * (self.E52 / ((1. + self.z)**5 * td**3 * self.n_ext))**0.125
+        # gc = 1.8e3 * (td / ((1. + self.z) * self.n_ext**5 * (100. * self.E52)**3))**0.125 / self.epsB2
+        # nuc = 2.8e6 * B * gc**2 * G / (1. + self.z)
         nuc = self.nuc(td)
+        nua = np.ones_like(t)
         num = self.num(td)
         nu0 = self.nu0()
         tc = self.tc(nu15)
         tm = self.tm(nu15)
         t0 = self.t0()
-        B = np.sqrt(32. * np.pi * C.mp * self.eps_B * self.n1) * G * C.cLight
-        Fnu_max = self.Fmax(td, Ne, B, pwise=False) * (1 + self.z)
-        # Fnu_max = Ne * Pmax * (1 + self.z) / (4 * np.pi * self.dL**2)
+        Fnu_max = self.Fmax(td, Ne, B, G, pwise=False) * (1. + self.z)
         for i in range(t.size):
             for j in range(nu.size):
-                if td[i] < t0:
-                    nua[i] = self.nua_fast(td[i])
-                    flux[i, j] = self.fast_cooling(nu[j], nua[i], nuc[i], num[i], Fnu_max[i])
+                if t[i] < t0:
+                    nua[i] = self.nua_fast(t[i], G[i])
+                    flux[i, j] = self.fast_cooling(nu[j], nua[i], nuc[i], num[i], nux[i], Fnu_max[i])
                 else:
-                    nua[i] = self.nua_slow()
-                    flux[i, j] = self.slow_cooling(nu[j], nua[i], nuc[i], num[i], Fnu_max[i])
+                    nua[i] = self.nua_slow(t[i], G[i])
+                    flux[i, j] = self.slow_cooling(nu[j], nua[i], nuc[i], num[i], nux[i], Fnu_max[i])
         t0 *= (1 + self.z)
         nu0 /= (1 + self.z)
         return nuc, num, nua, nu0, tc, tm, t0, flux
