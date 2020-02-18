@@ -190,7 +190,7 @@ class SPN98(object):
         return 0.69 * (self.eps_B * self.E52)**(1.0 / 3.0) * self.eps_e**(4.0 / 3.0)**(1.0 / 3.0) * nu15**(-2.0 / 3.0) * np.ones(nu15.size)
 
     def t0(self):
-        return 1.2d-2 * (1. + self.z) * self.n_ext * self.E52 * (self.fp * self.epse1 * self.epsB2)**2
+        return 1.2e-2 * (1. + self.z) * self.n_ext * self.E52 * (self.fp * self.epse1 * self.epsB2)**2
         # return (1. + self.z) * 8. * self.E0 * self.n_ext * (C.mp / C.me)**4 * (2. * C.sigmaT * self.eps_B * self.eps_e * self.fp / 3.)**2 / (3. * np.pi * C.mp * C.cLight**3)
 
     #
@@ -247,7 +247,7 @@ class SPN98(object):
             nuc = self.nuc(td)
         else:
             uB = 0.125 * B**2 / np.pi
-            gc = 1.800 * (td / ((1. + self.z) * self.n_ext**5 * (100. * self.E52)**3))**0.125 / (self.epsB2 * (1. + urad / uB))
+            gc = 1800 * (td / ((1. + self.z) * self.n_ext**5 * (1e-2 * self.E52)**3))**0.125 / (self.epsB2 * (1. + urad / uB))
             nuc = 2.8e6 * B * gc**2 * G / (1. + self.z)
         nua = np.ones_like(t)
         num = self.num(td)
