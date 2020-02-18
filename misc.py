@@ -24,7 +24,6 @@ def fortran_double(number, dble=True):
         ss = ss[0] + '.' + s
     else:
         ss = ss[0]
-
     ee = parts[-1]
     if ee.startswith('-'):
         e = ee.split('-')[-1]
