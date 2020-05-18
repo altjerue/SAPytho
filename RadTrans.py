@@ -19,23 +19,6 @@ def Inu_Guold79(jnu, anu, R):
     return fnu
 
 
-def OptDepthBlob_v(anu, R):
-    tau = 2 * R * anu
-    u = np.zeros_like(anu)
-    for j in range(anu.size):
-        if (tau[j] <= 1e-10):
-            u[j] = 1
-        else:
-            if tau[j] > 100:
-                u[j] = 0.5 - 1 / tau[j]**2
-            elif (tau[j] >= 0.01) and (tau[j] <= 100):
-                u[j] = 0.5 * (1 - 2 * (1 - (1 + tau[j]) * np.exp(-tau[j])) / tau[j]**2)
-            else:
-                u[j] = (tau[j] / 3) - 0.125 * tau[j]**2
-            u[j] = 3 * u[j] / tau[j]
-    return u
-
-
 def OptDepthBlob_s(absor, R):
     tau = 2 * R * absor
     if (tau <= 1e-10):
@@ -48,6 +31,45 @@ def OptDepthBlob_s(absor, R):
         else:
             u = (tau / 3) - 0.125 * tau**2
         u = 3 * u / tau
+    return u
+
+
+def OptDepthBlob_v(anu, R):
+    # tau = 2 * R * anu
+    u = np.zeros_like(anu)
+    for j in range(anu.size):
+        u[j] = OptDepthBlob_s(anu[j], R)
+        # if (tau[j] <= 1e-10):
+        #     u[j] = 1
+        # else:
+        #     if tau[j] > 100:
+        #         u[j] = 0.5 - 1 / tau[j]**2
+        #     elif (tau[j] >= 0.01) and (tau[j] <= 100):
+        #         u[j] = 0.5 * (1 - 2 * (1 - (1 + tau[j]) * np.exp(-tau[j])) / tau[j]**2)
+        #     else:
+        #         u[j] = (tau[j] / 3) - 0.125 * tau[j]**2
+        #     u[j] = 3 * u[j] / tau[j]
+    return u
+
+
+def OptDepthBlob_m(anu, R):
+    # tau = 2 * R * anu
+    u = np.zeros_like(anu)
+    dim1 = anu.shape[0]
+    dim2 = anu.shape[1]
+    for i in range(dim1):
+        for j in range(dim2):
+            u[i, j] = OptDepthBlob_s(anu[i, j], R)
+            # if (tau[i, j] <= 1e-10):
+            #     u[i, j] = 1
+            # else:
+            #     if tau[i, j] > 100:
+            #         u[i, j] = 0.5 - 1 / tau[i, j]**2
+            #     elif (tau[i, j] >= 0.01) and (tau[i, j] <= 100):
+            #         u[i, j] = 0.5 * (1 - 2 * (1 - (1 + tau[i, j]) * np.exp(-tau[i, j])) / tau[i, j]**2)
+            #     else:
+            #         u[i, j] = (tau[i, j] / 3) - 0.125 * tau[i, j]**2
+            #     u[i, j] = 3 * u[i, j] / tau[i, j]
     return u
 
 

@@ -1,10 +1,7 @@
 import sys
-# import subprocess
 import numpy as np
-# import scipy as sp
 import scipy.optimize as sciop
 import h5py
-# from scipy import special as spe
 import scipy.integrate as scint
 
 
@@ -59,7 +56,6 @@ def FindingMaximum(poly, o=1):
 
 
 def IntegFitting(syn_c, ic_c):
-    # print '---> In IntegFitting'
     p_syn = np.poly1d(syn_c)
     p_ic = np.poly1d(ic_c)
     p_diff = p_syn - p_ic

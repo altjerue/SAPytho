@@ -81,26 +81,74 @@ def cm2pc(distance):
     return distance / 3.08567758149137e18
 
 
+################################################################################
+#    Energy Flux
+#
 def specEnergyFlux(nu, jnu, anu, dL, z, Doppler, radius, volume):
     '''Calculates the spectral energy flux of a sphere.
     '''
-    try:
-        len(nu)
-        Fnu = Doppler**3 * (1 + z) * volume * jnu * RT.OptDepthBlob_v(anu, radius) / (4 * np.pi * dL**2)
-    except (TypeError, ValueError):
+    if nu.shape == ():
         Fnu = Doppler**3 * (1 + z) * volume * jnu * RT.OptDepthBlob_s(anu, radius) / (4 * np.pi * dL**2)
+    else:
+        if nu.shape == (nu.size,):
+            Fnu = Doppler**3 * (1 + z) * volume * jnu * RT.OptDepthBlob_v(anu, radius) / (4 * np.pi * dL**2)
+        else:
+            Fnu = Doppler**3 * (1 + z) * volume * jnu * RT.OptDepthBlob_m(anu, radius) / (4 * np.pi * dL**2)
     return Fnu
 
 
 def EnergyFlux(nu, jnu, anu, dL, Doppler, radius, volume):
     '''Calculates the energy flux of a sphere.
     '''
-    try:
-        len(nu)
-        nuF_nu = Doppler**4 * volume * nu * jnu * RT.OptDepthBlob_v(anu, radius) / (4 * np.pi * dL**2)
-    except (TypeError, ValueError):
+    if nu.shape == ():
         nuF_nu = Doppler**4 * volume * nu * jnu * RT.OptDepthBlob_s(anu, radius) / (4 * np.pi * dL**2)
+    else:
+        if anu.shape == (anu.size,):
+            nuF_nu = Doppler**4 * volume * nu * jnu * RT.OptDepthBlob_v(anu, radius) / (4 * np.pi * dL**2)
+        else:
+            nuF_nu = Doppler**4 * volume * nu * jnu * RT.OptDepthBlob_m(anu, radius) / (4 * np.pi * dL**2)
     return nuF_nu
+################################################################################
+
+
+################################################################################
+#   Luminosity
+#
+def specLuminosity(nu, jnu, anu, Doppler, radius, volume):
+    '''Calculates the spectral energy flux of a sphere.
+    '''
+    if nu.shape == ():
+        Lnu = Doppler**3 * volume * jnu * RT.OptDepthBlob_s(anu, radius)
+    else:
+        if anu.shape == (anu.size,):
+            Lnu = Doppler**3 * volume * jnu * RT.OptDepthBlob_v(anu, radius)
+        else:
+            Lnu = Doppler**3 * volume * jnu * RT.OptDepthBlob_m(anu, radius)
+    return Lnu
+
+
+def Luminosity(nu, jnu, anu, Doppler, radius, volume):
+    '''Calculates the energy flux of a sphere.
+    '''
+    if nu.shape == ():
+        nuL_nu = Doppler**4 * volume * nu * jnu * RT.OptDepthBlob_s(anu, radius)
+    else:
+        if anu.shape == (anu.size,):
+            nuL_nu = Doppler**4 * volume * nu * jnu * RT.OptDepthBlob_v(anu, radius)
+        else:
+            nuL_nu = Doppler**4 * volume * nu * jnu * RT.OptDepthBlob_m(anu, radius)
+    return nuL_nu
+################################################################################
+
+
+# ----->   Bolometric function
+def bolometric(nu, f):
+	'''This function returns the bolometric quantity f.
+	'''
+	Lbol = np.zeros_like(f[:, 0])
+	for i in range(Lbol.size):
+		Lbol[i] = sci_integ.simps(nu * f[i, :], x=np.log(nu))
+	return Lbol
 
 
 #
@@ -214,13 +262,6 @@ class LightCurves:
 
         return licur
 
-    def luminosity(self, t, nus, jnu, vol):
-        Lnu = vol * jnu
-        Lum = np.zeros_like(t)
-        for i in range(t.size):
-            Lum[i] = sci_integ.simps(nus * Lnu[i, :], x=np.log(nus))
-        return Lum
-
 
 #
 #   ####  #####  ######  ####  ##### #####    ##
@@ -263,7 +304,7 @@ class spectrum:
 
     def integ(self, t_min, t_max, nu, times, flux, ret_tmasked=False):
         '''This function returns the integrated spectrum during the period[t_min, t_max]
-        '''
+         '''
 
         if t_max < times[0]:
             print("Input t_max: ", t_max, "\nMinimum time in array:", times[0])
@@ -311,7 +352,7 @@ class spectrum:
         '''This function returns the averaged spectrum over the period[t_min, t_max]
         '''
         spec, tt = self.integ(t_min, t_max, nu, times, flux, ret_tmasked=True)
-        tott = np.sum(tt[1:] - tt[:-1]) + tt[0]
+        tott = tt[-1] - tt[0] #np.sum(tt[1:] - tt[:-1]) + tt[0]
         return spec / tott
 
 
@@ -365,14 +406,17 @@ def ComptonDom(nus, Fsyn, Fic, t_min, t_max, times):
 def Fph(nu_min, nu_max, freqs, Fnu):
     '''Calculate the photon flux for the frequency band [nu_min, nu_max] from
     a given flux density.
+
     Input:
         nu_min, nu_max: scalars
         freqs: array
         Fnu: array
+
     Output:
         Photon flux: scalar
         photon flux spectral indices: array
     '''
+
     if nu_min < freqs[0] or nu_max > freqs[-1]:
         return print('Error: nu_min and nu_max outside frequencies array')
 
