@@ -3,7 +3,7 @@ import numpy.ma as ma
 import scipy.integrate as sci_integ
 from . import misc
 from . import pwlFuncs as pwlf
-from . import SRtoolkit as srtool
+from . import SRtoolkit as SR
 from . import constants as C
 from . import RadTrans as RT
 import scipy.optimize as op
@@ -142,13 +142,26 @@ def Luminosity(nu, jnu, anu, Doppler, radius, volume):
 
 
 # ----->   Bolometric function
-def bolometric(nu, f):
-	'''This function returns the bolometric quantity f.
-	'''
-	Lbol = np.zeros_like(f[:, 0])
-	for i in range(Lbol.size):
-		Lbol[i] = sci_integ.simps(nu * f[i, :], x=np.log(nu))
-	return Lbol
+def lumBolometric(freqs, lum, freq_band=None):
+    if freq_band is None:
+        Lbol = sci_integ.simps(freqs * Lnu, x=np.log(freqs))
+    else:
+        Lbol = 0.
+        nu_min, nu_max = freq_band
+        if nu_min < freqs[0]:
+            print("nu_min =", nu_min, "\nminimum frequency in array =", freqs[0])
+            return Lbol
+        if nu_max > freqs[-1]:
+            print("nu_max =", nu_max, "\nmaximum frequency in array=", freqs[-1])
+            return Lbol
+        if nu_max == nu_min:
+            print("nu_max should not be equal to nu_min")
+            return Lbol
+        nu_mskd = ma.masked_outside(freqs, nu_min, nu_max)
+        nus = nu_mskd.compressed()
+        Lnu = lum[~nu_mskd.mask]
+        Lbol = sci_integ.simps(nus * Lnu, x=np.log(nus))
+    return Lbol
 
 
 #
@@ -176,8 +189,8 @@ def Itobs(t, nu, jnut, sen_lum, R, muc, Gbulk, muo, z, D):
                 i_start = i - i_edge
 
             for ii in range(i_start, i):
-                tob_min = srtool.t_com(t[i], z, Gbulk, muo, x=t[ii - 1] * C.cLight * muc)
-                tob_max = srtool.t_com(t[i], z, Gbulk, muo, x=t[ii] * C.cLight * muc)
+                tob_min = SR.t_com(t[i], z, Gbulk, muo, x=t[ii - 1] * C.cLight * muc)
+                tob_max = SR.t_com(t[i], z, Gbulk, muo, x=t[ii] * C.cLight * muc)
 
                 if ii == 0:
                     Itobs[i, j] = np.abs(tob_max - tob_min) * jnut[0, j]
@@ -190,7 +203,7 @@ def Itobs(t, nu, jnut, sen_lum, R, muc, Gbulk, muo, z, D):
                             sind = 8.0
                         Itobs[i, j] = Itobs[i, j] + jnut[ii - 1, j] * tob_min * \
                             pwl.P(tob_max / tob_min, sind, 1e-6) / \
-                            (Gbulk * muc * (muo - srtool.speed(Gbulk)) * D)
+                            (Gbulk * muc * (muo - SR.bofg(Gbulk)) * D)
     return Itobs
 
 
@@ -340,7 +353,7 @@ class spectrum:
             Fnu = flux[~t_mskd.mask, :]
 
         for j in range(nu.size):
-            spec[j] = sci_integ.simps(tt * Fnu[:, j], x=np.log(tt))
+            spec[j] = sci_integ.simps(tt*Fnu[:,j],x=np.log(tt))
             # spec[j] = sci_integ.simps(Fnu[:, j], x=tt)
 
         if ret_tmasked:
@@ -444,6 +457,6 @@ def photon_index(freqs, flux):
     def line(x, a, b):
         return a * x + b
     lnu = np.log10(freqs)
-    lfl = np.log10(flux)
+    lfl = np.log10(np.where(1e-100>flux, 1e-100, flux))
     popt, pcov = op.curve_fit(line, lnu, lfl)
     return np.power(10.0, line(np.log10(freqs), *popt)), popt, pcov
