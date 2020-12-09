@@ -34,17 +34,17 @@ class mbs:
         '''Synchrotron critical frequency'''
         return 1.5 * self.nu_g(B) * g**2
 
-    def chi(self, nu, B):
+    def chi(self, B, nu):
         '''Harmonic frequency'''
         return nu / self.nu_g(B)
 
-    def Psyn_iso(self, gamma, B):
+    def Psyn_iso(self, B, gamma):
         '''Total synchrotron radiated power for an isotropic distribution of
         velocities. Formula given in Rybicki & Lightman (1985), eq. (6.7b):
 
             P = (4 / 3) sigma_T c beta^2 gamma^2 (B^2 / 8 pi)
         '''
-        return 4.0 * C.sigmaT * C.cLight * SR.speed2(gamma) * gamma**2 * B**2 / (24.0 * np.pi)
+        return 4.0 * C.sigmaT * C.cLight * SR.bofg2(gamma) * gamma**2 * B**2 / (24.0 * np.pi)
 
     def Fsync(self, Xc, asym_low=False, asym_high=False):
         '''Synchrotron function'''
